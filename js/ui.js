@@ -336,7 +336,7 @@
 
     // 中央文字
     const cx = P.l + gw / 2, cy = P.t + gh * 0.38;
-    const big = Math.max(36, Math.min(W * 0.12, 96));
+    const big = Math.max(30, Math.min(W * 0.12, H * 0.22, 96));
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     if (r.phase === 'betting') {
       const left = Math.max(0, CFG.BET_MS - (now - r.phaseStart));
