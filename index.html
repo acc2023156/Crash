@@ -4,14 +4,16 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0f212e">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
 <meta name="description" content="Crash：多人同時下注的 Crash 模擬遊戲（遊戲幣，非真錢）">
 <title>Crash</title>
-<link rel="stylesheet" href="css/style.css?v=6">
+<link rel="stylesheet" href="css/style.css?v=7">
 </head>
 <body>
 <header class="topbar">
   <div class="brand">CRASH</div>
   <div class="demo-tag">模擬遊戲幣 · 非真錢</div>
+  <button class="sound-btn" id="soundBtn" type="button" title="音效開關" aria-label="音效開關">🔊</button>
   <div class="wallet" title="你的遊戲幣餘額"><i class="coin"></i><b id="balance">0.00</b></div>
 </header>
 
@@ -121,8 +123,9 @@
 
 <div class="toasts" id="toasts" aria-live="polite"></div>
 
-<script src="js/sha256.js?v=6"></script>
-<script src="js/engine.js?v=6"></script>
-<script src="js/ui.js?v=6"></script>
+<script src="js/sha256.js?v=7"></script>
+<script src="js/sound.js?v=7"></script>
+<script src="js/engine.js?v=7"></script>
+<script src="js/ui.js?v=7"></script>
 </body>
 </html>

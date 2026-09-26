@@ -27,6 +27,8 @@
   let tab = 'bets';
   let dirtyBets = true, dirtyAcc = true, dirtyMine = true;
   let liveCashouts = [];
+  const MILESTONES = [2, 5, 10, 20, 50, 100];
+  let milestoneIdx = 0, lastTickSec = 0;
 
   /* ---------- toast ---------- */
   function toast(msg, type = 'info') {
@@ -47,19 +49,28 @@
     el.roundNo.textContent = r.id;
     dirtyBets = true;
   });
-  eng.on('bet', () => { dirtyBets = true; });
+  eng.on('bet', b => {
+    dirtyBets = true;
+    if (b === null) Sound.cancel();
+    else if (b.isPlayer) Sound.bet();
+  });
+  eng.on('run', () => { milestoneIdx = 0; Sound.launch(); Sound.humStart(); });
   eng.on('cashout', b => {
     dirtyBets = true;
     liveCashouts.unshift(b);
     liveCashouts.length = Math.min(liveCashouts.length, 4);
     el.live.innerHTML = liveCashouts.map(c =>
       `<div>${c.isPlayer ? '⭐ 你' : c.hidden ? '🕶 Hidden' : c.name}<b>${fmtX(c.cashedAt)}</b><b>+${fmt(c.payout)}</b></div>`).join('');
+    if (b.isPlayer) Sound.win(); else Sound.blip();
     if (b.isPlayer) toast(`兌現成功 ${fmtX(b.cashedAt)}　+${fmt(b.payout - b.amount)}`, 'win');
   });
   eng.on('crash', r => {
     dirtyBets = dirtyAcc = dirtyMine = true;
     renderHistory(true);
+    Sound.humStop();
+    Sound.crash();
     const mine = r.bets.find(b => b.isPlayer);
+    if (mine && !mine.cashedAt) Sound.lose();
     if (mine && !mine.cashedAt) toast(`崩盤於 ${fmtX(r.crash)}　−${fmt(mine.amount)}`, 'lose');
   });
   eng.on('auto', () => { syncModeUI(); });
@@ -376,10 +387,51 @@
     ctx.arcTo(x, y + h, x, y, rad); ctx.arcTo(x, y, x + w, y, rad); ctx.closePath();
   }
 
+  /* ---------- sound ---------- */
+  function soundFrame(now) {
+    const r = eng.round;
+    if (r.phase === 'betting') {
+      const sec = Math.ceil((CFG.BET_MS - (now - r.phaseStart)) / 1000);
+      if (sec <= 3 && sec >= 1 && sec !== lastTickSec) Sound.tick(sec === 1);
+      lastTickSec = sec;
+    } else if (r.phase === 'running') {
+      const m = multAt(now - r.phaseStart);
+      Sound.humUpdate(m);
+      if (m >= MILESTONES[milestoneIdx] && m < r.crash) Sound.milestone(MILESTONES[milestoneIdx++]);
+    }
+  }
+  const soundBtn = $('#soundBtn');
+  function renderSound() {
+    soundBtn.textContent = Sound.enabled ? '🔊' : '🔇';
+    soundBtn.classList.toggle('off', !Sound.enabled);
+    soundBtn.setAttribute('aria-pressed', String(Sound.enabled));
+  }
+  soundBtn.addEventListener('click', () => {
+    Sound.toggle();
+    Sound.unlock();
+    if (Sound.enabled && eng.round.phase === 'running') Sound.humStart();
+    renderSound();
+  });
+  // 瀏覽器要求使用者操作後才能出聲
+  const unlock = () => {
+    Sound.unlock();
+    if (eng.round.phase === 'running') Sound.humStart();
+    window.removeEventListener('pointerdown', unlock);
+    window.removeEventListener('keydown', unlock);
+  };
+  window.addEventListener('pointerdown', unlock);
+  window.addEventListener('keydown', unlock);
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) Sound.humStop();
+    else if (eng.round.phase === 'running') Sound.humStart();
+  });
+  renderSound();
+
   /* ---------- loops ---------- */
   let lastList = 0;
   function frame(now) {
     eng.tick(now);
+    soundFrame(now);
     draw(now);
     updateButton(now);
     if (now - lastList > 120) {
