@@ -335,7 +335,7 @@
     }
 
     // 中央文字
-    const cx = P.l + gw / 2, cy = P.t + gh * 0.38;
+    const cx = P.l + gw / 2, cy = P.t + gh * (small ? 0.48 : 0.38);
     const big = Math.max(30, Math.min(W * 0.12, H * 0.22, 96));
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     if (r.phase === 'betting') {

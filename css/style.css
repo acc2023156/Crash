@@ -203,6 +203,8 @@ code { font-size: 12px; color: var(--strong); background: var(--input); padding:
   .topbar { padding: 0 12px; }
   .brand { font-size: 17px; }
   .hide-sm { display: none; }
+  .live-cashouts div:nth-child(n+3) { display: none; }
+  .live-cashouts div { font-size: 11px; padding: 3px 8px; }
   .panel { padding: 12px; }
   .list-head, .row { padding: 6px 10px; }
 }
