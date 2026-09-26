@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f212e">
+<meta name="description" content="Crash 926：多人同時下注的 Crash 模擬遊戲（遊戲幣，非真錢）">
+<title>Crash 926</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">CRASH<span>926</span></div>
+  <div class="demo-tag">模擬遊戲幣 · 非真錢</div>
+  <div class="wallet" title="你的遊戲幣餘額"><i class="coin"></i><b id="balance">0.00</b></div>
+</header>
+
+<main class="layout">
+  <section class="stage">
+    <div class="history" id="history"></div>
+    <div class="chart-wrap">
+      <canvas id="chart" aria-label="倍數曲線"></canvas>
+      <div class="live-cashouts" id="liveCashouts"></div>
+    </div>
+    <div class="stage-foot">
+      <span>第 <b id="roundNo">-</b> 局</span>
+      <span>玩家 <b id="playerCount">0</b></span>
+      <span>總下注 <b id="totalBet">0</b></span>
+      <span class="hide-sm">已兌現 <b id="totalWon">0</b></span>
+      <button class="link" id="fairBtn" type="button">公平性</button>
+    </div>
+  </section>
+
+  <aside class="panel">
+    <div class="seg" id="modeSeg">
+      <button type="button" class="on" data-mode="manual">手動</button>
+      <button type="button" data-mode="auto">自動</button>
+    </div>
+
+    <div class="field">
+      <label for="betAmount">下注金額</label>
+      <div class="input-row">
+        <input id="betAmount" type="number" inputmode="decimal" min="0.1" step="0.1" value="10">
+        <button type="button" data-amt="half">½</button>
+        <button type="button" data-amt="double">2×</button>
+        <button type="button" data-amt="max">Max</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="autoCashout">自動兌現倍數 <small>（手動模式可留空）</small></label>
+      <div class="input-row">
+        <input id="autoCashout" type="number" inputmode="decimal" min="1.01" step="0.01" value="2.00">
+        <span class="suffix">×</span>
+      </div>
+    </div>
+
+    <div id="autoFields" class="auto-fields" hidden>
+      <div class="field">
+        <label for="autoCount">投注局數 <small>（0 = 無限）</small></label>
+        <div class="input-row"><input id="autoCount" type="number" inputmode="numeric" min="0" step="1" value="10"></div>
+      </div>
+      <div class="two">
+        <div class="field">
+          <label for="onWin">贏了加碼 %</label>
+          <div class="input-row"><input id="onWin" type="number" inputmode="decimal" step="1" value="0"></div>
+        </div>
+        <div class="field">
+          <label for="onLoss">輸了加碼 %</label>
+          <div class="input-row"><input id="onLoss" type="number" inputmode="decimal" step="1" value="0"></div>
+        </div>
+      </div>
+      <p class="hint">0% = 回到原始金額</p>
+    </div>
+
+    <div class="profit-hint">獲勝淨利 <b id="profitHint">10.00</b></div>
+    <button id="mainBtn" class="main-btn" type="button">下注</button>
+    <p class="hint center">快捷鍵：空白鍵</p>
+
+    <details class="sim">
+      <summary>模擬設定（100 個暫代帳號）</summary>
+      <div class="field">
+        <label>每局自動投注人數：<b id="botRangeText">5 ~ 60</b></label>
+        <div class="range-row"><span>最少</span><input id="botMin" type="range" min="0" max="100" value="5"></div>
+        <div class="range-row"><span>最多</span><input id="botMax" type="range" min="0" max="100" value="60"></div>
+        <p class="hint">下一局生效</p>
+      </div>
+      <button id="resetBtn" class="ghost-btn" type="button">重置所有帳號與餘額</button>
+    </details>
+  </aside>
+
+  <section class="tables">
+    <div class="tabs" id="tabs">
+      <button type="button" class="on" data-tab="bets">本局下注</button>
+      <button type="button" data-tab="accounts">帳號 100</button>
+      <button type="button" data-tab="mine">我的紀錄</button>
+    </div>
+    <div class="tab-body" id="tab-bets">
+      <div class="list-head"><span>玩家</span><span>下注</span><span>倍數</span><span>派彩</span></div>
+      <div id="betList" class="list"></div>
+    </div>
+    <div class="tab-body" id="tab-accounts" hidden>
+      <div class="list-head acc"><span>帳號</span><span>風格</span><span>餘額</span><span>損益</span></div>
+      <div id="accList" class="list"></div>
+    </div>
+    <div class="tab-body" id="tab-mine" hidden>
+      <div class="list-head"><span>局</span><span>下注</span><span>兌現/崩盤</span><span>損益</span></div>
+      <div id="mineList" class="list"></div>
+    </div>
+  </section>
+</main>
+
+<div class="modal" id="fairModal" hidden>
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="fairTitle">
+    <div class="modal-head"><h2 id="fairTitle">公平性驗證</h2><button type="button" class="x" data-close>✕</button></div>
+    <p class="hint">每局開始前先公開 <code>SHA256(seed)</code>；崩盤後公開 seed。崩盤點 = <code>floor(99 / (1 − r)) / 100</code>，r 取 <code>SHA256(seed:crash926:局號)</code> 前 52 bits。點任一局可重新計算驗證。</p>
+    <div class="cur" id="fairCurrent"></div>
+    <div id="fairList" class="fair-list"></div>
+  </div>
+</div>
+
+<div class="toasts" id="toasts" aria-live="polite"></div>
+
+<script src="js/sha256.js"></script>
+<script src="js/engine.js"></script>
+<script src="js/ui.js"></script>
+</body>
+</html>
