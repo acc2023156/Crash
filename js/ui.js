@@ -459,5 +459,21 @@
   updateProfitHint();
   requestAnimationFrame(frame);
 
+  // 跑馬燈：兩份相同文字捲動一半寬度形成無縫循環；每圈開頭都是「沖高高」，換圈時重洗祝福語
+  (function startMarquee() {
+    const track = $('#marquee');
+    const sep = '　✦　';
+    const cheers = ['祝你高倍', '一飛沖天', '好運連連', '大吉大利', '倍數噴發', '見好就收', '財源滾滾', '旗開得勝', '手氣長紅', '加油加油'];
+    const build = () => {
+      const c = cheers.slice().sort(() => Math.random() - 0.5);
+      const text = ['沖高高', c[0], c[1], '沖高高', c[2], c[3]].join(sep) + sep;
+      track.innerHTML = '';
+      for (let i = 0; i < 2; i++) track.appendChild(document.createElement('span')).textContent = text;
+      track.style.animationDuration = text.length * 0.32 + 's';
+    };
+    track.addEventListener('animationiteration', build);
+    build();
+  })();
+
   window.__crash = eng; // 方便除錯
 })();

@@ -5,17 +5,23 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0f212e">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
-<meta name="description" content="Crash：多人同時下注的 Crash 模擬遊戲（遊戲幣，非真錢）">
-<title>Crash</title>
-<link rel="stylesheet" href="css/style.css?v=7">
+<meta name="description" content="沖高高：多人同時下注的 Crash 模擬遊戲（遊戲幣，非真錢）">
+<title>沖高高</title>
+<link rel="stylesheet" href="css/style.css?v=8">
 </head>
 <body>
 <header class="topbar">
-  <div class="brand">CRASH</div>
-  <div class="demo-tag">模擬遊戲幣 · 非真錢</div>
-  <button class="sound-btn" id="soundBtn" type="button" title="音效開關" aria-label="音效開關">🔊</button>
-  <div class="wallet" title="你的遊戲幣餘額"><i class="coin"></i><b id="balance">0.00</b></div>
+  <a class="back" href="https://acc2023156.github.io/Boss88VIP/boss88-mobile-lobby.html" title="返回大廳">
+    <span aria-hidden="true">‹</span><span>返回大廳</span>
+  </a>
+  <h1 class="brand">沖高高</h1>
+  <div class="top-right">
+    <button class="sound-btn" id="soundBtn" type="button" title="音效開關" aria-label="音效開關">🔊</button>
+    <div class="wallet" title="你的遊戲幣餘額（模擬遊戲幣，非真錢）"><i class="coin"></i><b id="balance">0.00</b></div>
+  </div>
 </header>
+
+<div class="marquee-bar" aria-hidden="true"><div class="marquee"><span class="marquee-track" id="marquee"></span></div></div>
 
 <main class="layout">
   <section class="stage">
@@ -123,9 +129,9 @@
 
 <div class="toasts" id="toasts" aria-live="polite"></div>
 
-<script src="js/sha256.js?v=7"></script>
-<script src="js/sound.js?v=7"></script>
-<script src="js/engine.js?v=7"></script>
-<script src="js/ui.js?v=7"></script>
+<script src="js/sha256.js?v=8"></script>
+<script src="js/sound.js?v=8"></script>
+<script src="js/engine.js?v=8"></script>
+<script src="js/ui.js?v=8"></script>
 </body>
 </html>

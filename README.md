@@ -1,4 +1,4 @@
-# Crash — 多人同時下注 Crash 網頁遊戲（模擬版）
+# 沖高高 — 多人同時下注 Crash 網頁遊戲（模擬版）
 
 **線上試玩：https://acc2023156.github.io/Crash/**
 

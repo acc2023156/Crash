@@ -31,17 +31,45 @@ code { font-size: 12px; color: var(--strong); background: var(--input); padding:
 
 /* ---------- top bar ---------- */
 .topbar {
-  display: flex; align-items: center; gap: 12px;
+  display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px;
   height: 56px; padding: 0 16px;
   padding-top: env(safe-area-inset-top);
   background: var(--panel); border-bottom: 1px solid var(--line);
   position: sticky; top: 0; z-index: 20;
 }
-.brand { font-weight: 900; font-size: 20px; letter-spacing: 1px; color: var(--strong); }
-.brand span { color: var(--orange); margin-left: 2px; }
-.demo-tag { font-size: 12px; color: var(--muted); border: 1px solid var(--line); border-radius: 99px; padding: 2px 10px; }
+.back {
+  justify-self: start; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;
+  padding: 6px 12px 6px 8px; border-radius: 99px; background: var(--input); border: 1px solid var(--line);
+  color: var(--strong); font-size: 13px; font-weight: 700; text-decoration: none;
+}
+.back span:first-child { font-size: 20px; line-height: 1; color: var(--gold); }
+.back:hover { border-color: #557086; }
+.brand {
+  justify-self: center; margin: 0; white-space: nowrap;
+  font-weight: 900; font-size: 20px; letter-spacing: 2px;
+  background: linear-gradient(180deg, #fff3c4, var(--gold) 55%, var(--orange));
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.top-right { justify-self: end; display: flex; align-items: center; gap: 8px; min-width: 0; }
+
+/* 會員列下方、下注區上方的 26 字跑馬燈 */
+.marquee-bar { padding: 10px 12px 0; font-size: 13px; font-weight: 900; line-height: 1.8; }
+.marquee {
+  display: block; width: 26em; max-width: 100%; margin: 0 auto; overflow: hidden; padding: 1px 0;
+  border-radius: 99px; background: var(--panel);
+  box-shadow: inset 0 0 0 1px rgba(255, 209, 102, .45);
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+}
+.marquee-track { display: inline-flex; white-space: nowrap; animation: marquee 20s linear infinite; }
+.marquee-track span {
+  background: linear-gradient(180deg, #fff3c4, var(--gold) 55%, var(--orange));
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+@keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
 .sound-btn {
-  margin-left: auto; width: 38px; height: 38px; border: 0; border-radius: var(--radius);
+  width: 38px; height: 38px; border: 0; border-radius: var(--radius);
   background: var(--input); font-size: 17px; line-height: 1; flex: none;
 }
 .sound-btn.off { opacity: .55; }
@@ -197,7 +225,7 @@ code { font-size: 12px; color: var(--strong); background: var(--input); padding:
   .stage { position: static; height: auto; }
   .tables { height: 70vh; max-height: none; }
   .chart-wrap { flex: none; height: clamp(240px, 42vh, 380px); min-height: 0; }
-  .demo-tag { display: none; }
+  .marquee-bar { padding: 8px 8px 0; }
   /* 手機：下注按鈕移到面板最上方，和曲線相鄰 */
   .panel { display: flex; flex-direction: column; }
   .main-btn { order: -2; margin-bottom: 4px; }
@@ -205,8 +233,12 @@ code { font-size: 12px; color: var(--strong); background: var(--input); padding:
   .seg { order: -1; margin-top: 8px; }
 }
 @media (max-width: 480px) {
-  .topbar { padding: 0 12px; }
-  .brand { font-size: 17px; }
+  .topbar { padding: 0 8px; gap: 6px; }
+  .back { padding: 5px 9px 5px 6px; font-size: 12px; }
+  .brand { font-size: 17px; letter-spacing: 1px; }
+  .top-right { gap: 4px; }
+  .sound-btn { width: 30px; height: 30px; font-size: 15px; }
+  .wallet { padding: 6px 8px; gap: 5px; font-size: 13px; }
   .hide-sm { display: none; }
   .live-cashouts div:nth-child(n+3) { display: none; }
   .live-cashouts div { font-size: 11px; padding: 3px 8px; }
