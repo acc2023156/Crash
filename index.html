@@ -7,7 +7,7 @@
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <meta name="description" content="沖高高：多人同時下注的 Crash 模擬遊戲（遊戲幣，非真錢）">
 <title>沖高高</title>
-<link rel="stylesheet" href="css/style.css?v=8">
+<link rel="stylesheet" href="css/style.css?v=9">
 </head>
 <body>
 <header class="topbar">
@@ -35,7 +35,7 @@
       <span>玩家 <b id="playerCount">0</b></span>
       <span>總下注 <b id="totalBet">0</b></span>
       <span class="hide-sm">已兌現 <b id="totalWon">0</b></span>
-      <button class="link" id="fairBtn" type="button">公平性</button>
+      <button class="link" id="fairBtn" type="button">驗證本局</button>
     </div>
   </section>
 
@@ -93,7 +93,7 @@
         <div class="range-row"><span>最多</span><input id="botMax" type="range" min="0" max="100" value="60"></div>
         <p class="hint">下一局生效</p>
       </div>
-      <button id="resetBtn" class="ghost-btn" type="button">重置所有帳號與餘額</button>
+      <button id="resetBtn" class="ghost-btn" type="button">重置顯示設定</button>
     </details>
   </aside>
 
@@ -120,8 +120,8 @@
 
 <div class="modal" id="fairModal" hidden>
   <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="fairTitle">
-    <div class="modal-head"><h2 id="fairTitle">公平性驗證</h2><button type="button" class="x" data-close>✕</button></div>
-    <p class="hint">每局開始前先公開 <code>SHA256(seed)</code>；崩盤後公開 seed。崩盤點 = <code>floor(99 / (1 − r)) / 100</code>，r 取 <code>SHA256(seed:crash926:局號)</code> 前 52 bits。點任一局可重新計算驗證。</p>
+    <div class="modal-head"><h2 id="fairTitle">驗證本局</h2><button type="button" class="x" data-close>✕</button></div>
+    <p class="hint">選擇已完成的回合後，會開啟 SHA 共用驗證頁，在瀏覽器內重新計算承諾、爆點與派彩。</p>
     <div class="cur" id="fairCurrent"></div>
     <div id="fairList" class="fair-list"></div>
   </div>
@@ -132,6 +132,7 @@
 <script src="js/sha256.js?v=8"></script>
 <script src="js/sound.js?v=8"></script>
 <script src="js/engine.js?v=8"></script>
-<script src="js/ui.js?v=8"></script>
+<script src="js/remote-engine.js?v=1"></script>
+<script src="js/ui.js?v=9"></script>
 </body>
 </html>

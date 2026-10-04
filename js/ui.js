@@ -1,6 +1,6 @@
 (function () {
   'use strict';
-  const { CFG, STYLES, Engine, multAt, timeFor, crashFromSeed, floor2 } = window.Crash;
+  const { CFG, STYLES, Engine, multAt, timeFor, floor2 } = window.Crash;
 
   let store = null;
   try { store = window.localStorage; store.setItem('__t', '1'); store.removeItem('__t'); } catch (e) { store = null; }
@@ -83,7 +83,7 @@
   }
   el.history.addEventListener('click', e => {
     const b = e.target.closest('[data-round]');
-    if (b) openFair(+b.dataset.round);
+    if (b) openFair(b.dataset.round);
   });
 
   /* ---------- lists ---------- */
@@ -175,6 +175,8 @@
     if (eng.auto.on) {
       cls = 'stop'; label = '停止自動投注';
       sub = `下注 ${fmt(eng.auto.amount)} @ ${fmtX(eng.auto.target)}` + (eng.auto.remaining ? `　剩 ${eng.auto.remaining} 局` : '　無限');
+    } else if (r.phase === 'starting') {
+      cls = 'queued'; label = '正在建立回合…'; sub = '請稍候';
     } else if (r.phase === 'running' && bet && !bet.cashedAt) {
       const m = floor2(Math.min(multAt(now - r.phaseStart), r.crash));
       cls = 'cash'; label = '兌現 ' + fmt(bet.amount * m); sub = fmtX(m);
@@ -229,7 +231,7 @@
     syncBotRange();
   }));
   $('#resetBtn').addEventListener('click', () => {
-    if (!confirm('確定要重置 100 個帳號與你的餘額？')) return;
+    if (!confirm('確定要重置模擬玩家顯示設定？你的伺服器錢包不會受到影響。')) return;
     eng.reset();
     location.reload();
   });
@@ -237,22 +239,24 @@
   /* ---------- fairness ---------- */
   function openFair(focusId) {
     const r = eng.round;
-    el.fairCurrent.innerHTML = `目前第 <b>${r.id}</b> 局 hash：<br><code>${r.hash}</code><br>` +
-      (r.phase === 'crashed' ? `seed：<code>${r.seed}</code>` : '<span class="hint">seed 將在崩盤後公開</span>');
+    el.fairCurrent.innerHTML = r.remote
+      ? `目前回合：<br><code>${r.serverId}</code><br><span class="hint">${r.phase === 'crashed' ? '已可驗證完整結果' : '爆點後即可驗證完整結果'}</span>`
+      : '<span class="hint">目前是無玩家下注的展示回合；完成一次下注後即可驗證。</span>';
     el.fairList.innerHTML = eng.history.map(h =>
-      `<details ${h.id === focusId ? 'open' : ''} data-id="${h.id}"><summary><span>#${h.id}</span><b class="chip ${chipClass(h.crash)}">${fmtX(h.crash)}</b></summary>` +
-      `<div class="kv">hash：<code>${h.hash}</code></div><div class="kv">seed：<code>${h.seed}</code></div>` +
-      `<div class="kv verify"></div></details>`).join('') || '<div class="empty">尚無已結束的局</div>';
-    el.fairList.querySelectorAll('details').forEach(d => {
-      const run = () => {
-        const h = eng.history.find(x => x.id === +d.dataset.id);
-        const hashOk = window.sha256(h.seed) === h.hash;
-        const c = crashFromSeed(h.seed, h.id);
-        d.querySelector('.verify').innerHTML = `重新計算：SHA256(seed) ${hashOk ? '<span class="ok">相符 ✓</span>' : '<span class="neg">不符 ✗</span>'}，崩盤點 ${fmtX(c)} ${c === h.crash ? '<span class="ok">✓</span>' : '<span class="neg">✗</span>'}`;
-      };
-      if (d.open) run();
-      d.addEventListener('toggle', () => { if (d.open) run(); });
-    });
+      `<div class="kv"><span>${String(h.id).slice(0, 8)}…　<b class="chip ${chipClass(h.crash)}">${fmtX(h.crash)}</b></span>` +
+      `<button type="button" class="verify-round" data-id="${h.id}">驗證本局</button></div>`).join('') || '<div class="empty">尚無可驗證的已完成回合</div>';
+    el.fairList.querySelectorAll('.verify-round').forEach(button => button.addEventListener('click', () => {
+      const item = eng.history.find(history => history.id === button.dataset.id);
+      if (!item) return;
+      const verifierBase = /^(localhost|127\.0\.0\.1)$/.test(window.location.hostname)
+        ? 'http://127.0.0.1:8793/'
+        : 'https://sha-fairness-dev.pages.dev/';
+      const url = new URL(verifierBase);
+      url.searchParams.set('game_id', 'crash');
+      url.searchParams.set('round_id', item.id);
+      url.searchParams.set('token', item.token);
+      window.open(url, '_blank', 'noopener');
+    }));
     el.fairModal.hidden = false;
   }
   $('#fairBtn').addEventListener('click', () => openFair());
@@ -451,13 +455,20 @@
   // 分頁在背景時 rAF 會停，改用計時器推進遊戲，保持自動兌現準確
   setInterval(() => { if (document.hidden) eng.tick(performance.now()); }, 250);
 
-  eng.start(performance.now());
-  el.balance.textContent = fmt(eng.player.balance);
-  renderHistory(false);
-  syncBotRange();
-  syncModeUI();
-  updateProfitHint();
-  requestAnimationFrame(frame);
+  el.mainBtn.disabled = true;
+  el.mainBtn.textContent = '連線中…';
+  eng.start(performance.now()).then(() => {
+    el.mainBtn.disabled = false;
+    el.balance.textContent = fmt(eng.player.balance);
+    renderHistory(false);
+    syncBotRange();
+    syncModeUI();
+    updateProfitHint();
+    requestAnimationFrame(frame);
+  }).catch(error => {
+    el.mainBtn.textContent = '連線失敗';
+    toast(`無法連接遊戲伺服器：${error.message}`, 'err');
+  });
 
   // 跑馬燈：兩份相同文字捲動一半寬度形成無縫循環；每圈開頭都是「沖高高」，換圈時重洗祝福語
   (function startMarquee() {

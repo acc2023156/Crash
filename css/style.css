@@ -207,6 +207,9 @@ code { font-size: 12px; color: var(--strong); background: var(--input); padding:
 .fair-list details { border-bottom: 1px solid var(--line); padding: 8px 0; font-size: 13px; }
 .fair-list summary { cursor: pointer; display: flex; justify-content: space-between; gap: 8px; }
 .fair-list .kv { font-size: 12px; margin: 6px 0; }
+.fair-list .kv { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--line); }
+.verify-round { border: 0; border-radius: 6px; padding: 7px 10px; background: var(--green); color: #07160d; font-weight: 800; cursor: pointer; white-space: nowrap; }
+.main-btn:disabled { opacity: .62; cursor: wait; }
 .ok { color: var(--green); font-weight: 700; }
 
 .toasts { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); display: flex; flex-direction: column; gap: 8px; z-index: 60; pointer-events: none; width: max-content; max-width: calc(100vw - 32px); }
