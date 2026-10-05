@@ -241,7 +241,8 @@
         const headers = round.proofToken ? { authorization: `Bearer ${round.proofToken}` } : {};
         const proof = await fetch(`${API_BASE}/api/v1/games/crash/rounds/${encodeURIComponent(round.serverId)}/proof`, { headers, cache: 'no-store' });
         const payload = await proof.json();
-        if (payload.reveal) this.finishRemote(payload);
+        // 兌現請求還在路上時先不結束這局，等它的結果回來再公開
+        if (payload.reveal && !round.cashing) this.finishRemote(payload);
       } catch (error) {
         // A transient poll failure must not alter the authoritative round.
       } finally {
@@ -287,18 +288,31 @@
       const bet = this.myBet();
       if (round.phase !== 'running' || !round.remote || !bet || bet.cashedAt || round.cashing) return;
       round.cashing = true;
+      const elapsed = performance.now() - round.phaseStart;
+      // 先以按下時的倍數顯示兌現，伺服器確認後更新金額；被拒絕（已爆）時撤回
+      bet.cashedAt = floor2(multAt(elapsed));
+      bet.payout = floor2(bet.amount * bet.cashedAt);
+      bet.pending = true;
+      this.emit('cashout', bet);
       try {
         const payload = await this.api(`/api/v1/games/crash/rounds/${encodeURIComponent(round.serverId)}/cashout`, {
-          method: 'POST', body: JSON.stringify({ request_id: randomId() })
+          method: 'POST',
+          // 按下時離開局幾毫秒：伺服器以此時的倍數結算（最多補償 300ms 網路延遲）
+          body: JSON.stringify({ request_id: randomId(), elapsed_ms: Math.round(elapsed) })
         });
         bet.cashedAt = Number(payload.round.cashed_at);
         bet.payout = fromMoney(payload.round.payout);
         this.player.balance = fromMoney(payload.balance);
         this.commitment = payload.next_commitment;
-        this.emit('cashout', bet);
+        bet.pending = false;
+        this.emit('cashout-confirm', bet);
         this.emit('balance');
       } catch (error) {
-        if (error.code === 'ROUND_CRASHED' || error.code === 'ROUND_FINISHED') this.pollRemote();
+        bet.cashedAt = null;
+        bet.payout = 0;
+        bet.pending = false;
+        this.emit('cashout-undo', bet);
+        if (error.code === 'ROUND_CRASHED' || error.code === 'ROUND_FINISHED') { this.fail('來不及兌現，已爆'); this.pollRemote(); }
         else this.fail(`兌現失敗：${error.message}`);
       } finally {
         round.cashing = false;
