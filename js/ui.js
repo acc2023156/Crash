@@ -7,7 +7,8 @@
 
   const eng = new Engine(store);
   const $ = s => document.querySelector(s);
-  const fmt = v => (+v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  // 金額顯示兩位小數、無條件捨去（與大廳、GDBO 一致）
+  const fmt = v => (Math.trunc(Math.round(+v * 1000) / 10) / 100 || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const fmtX = v => v.toFixed(2) + '×';
   const signed = v => (v >= 0 ? '+' : '') + fmt(v);
 
@@ -454,6 +455,16 @@
   }
   // 分頁在背景時 rAF 會停，改用計時器推進遊戲，保持自動兌現準確
   setInterval(() => { if (document.hidden) eng.tick(performance.now()); }, 250);
+
+  // 大廳可帶自己的網址回來：?return=<大廳網址>；只接受自家網域，避免被當成跳轉跳板
+  (function () {
+    const ret = new URLSearchParams(location.search).get('return');
+    if (!ret) return;
+    try {
+      const u = new URL(ret);
+      if (/^https?:$/.test(u.protocol) && ['acc2023156.github.io', location.hostname, 'localhost', '127.0.0.1'].includes(u.hostname)) $('.back').href = u.href;
+    } catch (e) { /* ignore */ }
+  })();
 
   el.mainBtn.disabled = true;
   el.mainBtn.textContent = '連線中…';
