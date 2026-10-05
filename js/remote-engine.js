@@ -3,9 +3,24 @@
 
   const Base = global.Crash;
   const { CFG, STYLES, multAt, floor2 } = Base;
-  const API_BASE = /^(localhost|127\.0\.0\.1)$/.test(global.location.hostname)
+  // 大廳（GDBO）進入時帶 ?api=<SHA API>&return=<大廳> 與 #token=<launch token>，改用會員的 GDBO 錢包
+  const query = new URLSearchParams(global.location.search);
+  // api 只接受 Cloudflare Workers 或本機，launch token 不會送到其他主機
+  const queryApi = (() => {
+    try {
+      const u = new URL(query.get('api') || '');
+      return /\.workers\.dev$|^(localhost|127\.0\.0\.1)$/.test(u.hostname) ? u.href : '';
+    } catch (e) { return ''; }
+  })();
+  const API_BASE = (queryApi || (/^(localhost|127\.0\.0\.1)$/.test(global.location.hostname)
     ? 'http://127.0.0.1:8791'
-    : 'https://sha-platform-dev.sha-platform.workers.dev';
+    : 'https://sha-platform-dev.sha-platform.workers.dev')).replace(/\/$/, '').replace(/\/api\/v1$/, '');
+  let LAUNCH_TOKEN = new URLSearchParams(global.location.hash.slice(1)).get('token');
+  try {
+    if (LAUNCH_TOKEN) global.sessionStorage.setItem('crash.launchToken', LAUNCH_TOKEN);
+    else LAUNCH_TOKEN = global.sessionStorage.getItem('crash.launchToken');
+  } catch (e) { /* ignore */ }
+  if (global.location.hash) global.history.replaceState(null, '', global.location.pathname + global.location.search);
 
   const round2 = value => Math.round(value * 100) / 100;
   const toUnits = value => String(Math.round(Number(value) * 1000));
@@ -54,7 +69,11 @@
     async api(path, options = {}) {
       const response = await fetch(API_BASE + path, {
         ...options,
-        headers: { 'content-type': 'application/json', 'x-player-id': this.player.id, ...(options.headers || {}) },
+        headers: {
+          'content-type': 'application/json',
+          ...(LAUNCH_TOKEN ? { authorization: `Bearer ${LAUNCH_TOKEN}` } : { 'x-player-id': this.player.id }),
+          ...(options.headers || {})
+        },
         cache: 'no-store',
       });
       const payload = await response.json();
@@ -67,6 +86,13 @@
     }
 
     async start(now) {
+      if (LAUNCH_TOKEN) {
+        // GDBO 會員：餘額由 GDBO 決定，不建立開發用測試錢包
+        await this.refreshSession();
+        this.player.id = this.sessionPlayer;
+        this.newRound(now);
+        return;
+      }
       let playerId = '';
       try { playerId = this.store && this.store.getItem('crash.playerId') || ''; } catch (e) { /* ignore */ }
       if (!playerId) {
@@ -84,6 +110,7 @@
     async refreshSession() {
       const session = await this.api('/api/v1/games/crash/session', { method: 'POST', body: '{}' });
       this.player.balance = fromMoney(session.balance);
+      this.sessionPlayer = session.player_id;
       this.commitment = session.commitment;
       this.emit('balance');
     }
