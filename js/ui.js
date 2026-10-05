@@ -56,14 +56,24 @@
     else if (b.isPlayer) Sound.bet();
   });
   eng.on('run', () => { milestoneIdx = 0; Sound.launch(); Sound.humStart(); });
-  eng.on('cashout', b => {
+  function renderLive() {
     dirtyBets = true;
-    liveCashouts.unshift(b);
-    liveCashouts.length = Math.min(liveCashouts.length, 4);
     el.live.innerHTML = liveCashouts.map(c =>
       `<div>${c.isPlayer ? '⭐ 你' : c.hidden ? '🕶 Hidden' : c.name}<b>${fmtX(c.cashedAt)}</b><b>+${fmt(c.payout)}</b></div>`).join('');
+  }
+  eng.on('cashout', b => {
+    liveCashouts.unshift(b);
+    liveCashouts.length = Math.min(liveCashouts.length, 4);
+    renderLive();
     if (b.isPlayer) Sound.win(); else Sound.blip();
-    if (b.isPlayer) toast(`兌現成功 ${fmtX(b.cashedAt)}　+${fmt(b.payout - b.amount)}`, 'win');
+    if (b.isPlayer && !b.pending) cashoutToast(b);
+  });
+  function cashoutToast(b) { toast(`兌現成功 ${fmtX(b.cashedAt)}　+${fmt(b.payout - b.amount)}`, 'win'); }
+  // 先顯示的兌現等伺服器確認才跳成功訊息（金額以伺服器為準）；被拒絕時撤回
+  eng.on('cashout-confirm', b => { renderLive(); cashoutToast(b); });
+  eng.on('cashout-undo', b => {
+    liveCashouts = liveCashouts.filter(c => c !== b);
+    renderLive();
   });
   eng.on('crash', r => {
     dirtyBets = dirtyAcc = dirtyMine = true;
