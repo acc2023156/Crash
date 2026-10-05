@@ -289,7 +289,9 @@
       round.cashing = true;
       try {
         const payload = await this.api(`/api/v1/games/crash/rounds/${encodeURIComponent(round.serverId)}/cashout`, {
-          method: 'POST', body: JSON.stringify({ request_id: randomId() })
+          method: 'POST',
+          // 按下時離開局幾毫秒：伺服器以此時的倍數結算（最多補償 300ms 網路延遲）
+          body: JSON.stringify({ request_id: randomId(), elapsed_ms: Math.round(performance.now() - round.phaseStart) })
         });
         bet.cashedAt = Number(payload.round.cashed_at);
         bet.payout = fromMoney(payload.round.payout);
