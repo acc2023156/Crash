@@ -6,13 +6,24 @@
   let noiseBuf = null;
   let hum = null;
   let lastBlip = 0;
-  try { enabled = localStorage.getItem('crash.sound') !== 'off'; } catch (e) { /* storage unavailable */ }
+  // 音效音量跟著共用「音源」（大廳與遊戲共用 localStorage 的 gd-music.sfx，0–100；0 = 靜音）
+  const sfxLevel = () => { try { const p = JSON.parse(localStorage.getItem('gd-music')) || {}; return p.sfx === undefined ? 1 : p.sfx / 100; } catch (e) { return 1; } };
+  let master = null;
+  enabled = sfxLevel() > 0;
+  window.addEventListener('gd-audio-change', () => {
+    enabled = sfxLevel() > 0;
+    if (master) master.gain.value = sfxLevel();
+    if (!enabled && typeof Sound !== 'undefined' && Sound.humStop) Sound.humStop();
+  });
 
   function audio() {
     if (!ctx) {
       const AC = global.AudioContext || global.webkitAudioContext;
       if (!AC) return null;
       ctx = new AC();
+      master = ctx.createGain();
+      master.gain.value = sfxLevel();
+      master.connect(ctx.destination);
     }
     if (ctx.state === 'suspended') ctx.resume();
     return ctx;
@@ -29,7 +40,7 @@
     if (slide) osc.frequency.exponentialRampToValueAtTime(freq * slide, t + dur);
     g.gain.setValueAtTime(gain, t);
     g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-    osc.connect(g).connect(ac.destination);
+    osc.connect(g).connect(master);
     osc.start(t);
     osc.stop(t + dur + 0.02);
   }
@@ -53,7 +64,7 @@
     f.frequency.exponentialRampToValueAtTime(to, t + dur);
     g.gain.setValueAtTime(gain, t);
     g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-    src.connect(f).connect(g).connect(ac.destination);
+    src.connect(f).connect(g).connect(master);
     src.start(t);
     src.stop(t + dur + 0.05);
   }
@@ -107,7 +118,7 @@
       f.type = 'lowpass'; f.frequency.value = 900;
       g.gain.setValueAtTime(0.0001, ac.currentTime);
       g.gain.exponentialRampToValueAtTime(0.035, ac.currentTime + 0.3);
-      osc.connect(f); osc2.connect(f); f.connect(g).connect(ac.destination);
+      osc.connect(f); osc2.connect(f); f.connect(g).connect(master);
       osc.start(); osc2.start();
       hum = { osc, osc2, f, g };
     },
