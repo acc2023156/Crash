@@ -9,7 +9,7 @@
   const queryApi = (() => {
     try {
       const u = new URL(query.get('api') || '');
-      return /\.workers\.dev$|^(localhost|127\.0\.0\.1)$/.test(u.hostname) ? u.href : '';
+      return /\.workers\.dev$|(^|\.)gdclub\.cc$|^(localhost|127\.0\.0\.1)$/.test(u.hostname) ? u.href : '';
     } catch (e) { return ''; }
   })();
   const API_BASE = (queryApi || (/^(localhost|127\.0\.0\.1)$/.test(global.location.hostname)
